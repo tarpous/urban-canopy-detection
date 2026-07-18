@@ -1,0 +1,57 @@
+[project]
+name = "urban-canopy-detection"
+version = "0.1.0"
+description = "Tree-crown detection on aerial imagery: YOLO26 and RF-DETR vs a published DeepForest baseline on the NEON benchmark, with leakage-safe splits and geospatial outputs"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "ruff>=0.12",
+    "mypy>=1.16",
+    "pytest>=8.3",
+    "pytest-cov>=6.1",
+]
+
+[project.scripts]
+canopy = "urban_canopy.cli:app"
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/urban_canopy"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+    "C4",  # flake8-comprehensions
+    "PT",  # flake8-pytest-style
+    "RET", # flake8-return
+    "RUF", # ruff-specific
+]
+
+[tool.mypy]
+strict = true
+files = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=urban_canopy --cov-report=term-missing"
+
+[tool.coverage.run]
+source = ["src/urban_canopy"]
