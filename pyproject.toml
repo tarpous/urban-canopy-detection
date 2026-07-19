@@ -13,6 +13,7 @@ dependencies = [
     "rasterio>=1.5.0",
     "requests>=2.34.2",
     "shapely>=2.1.2",
+    "typer>=0.27.0",
 ]
 
 [dependency-groups]
@@ -39,6 +40,9 @@ packages = ["src/urban_canopy"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+# Notebooks run top-to-bottom with mid-cell imports after environment setup;
+# they are validated by executing on the T4, not by lint.
+extend-exclude = ["notebooks"]
 
 [tool.ruff.lint]
 select = [
