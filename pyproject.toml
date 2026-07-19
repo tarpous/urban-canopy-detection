@@ -7,9 +7,12 @@ license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.12"
 dependencies = [
+    "geopandas>=1.1.4",
     "pillow>=12.3.0",
     "pyyaml>=6.0.3",
+    "rasterio>=1.5.0",
     "requests>=2.34.2",
+    "shapely>=2.1.2",
 ]
 
 [dependency-groups]
@@ -20,6 +23,7 @@ dev = [
     "pytest-cov>=6.1",
     "types-requests>=2.33.0.20260712",
     "types-pyyaml>=6.0.12.20260518",
+    "numpy>=2.5.1",
 ]
 
 [project.scripts]
@@ -54,6 +58,12 @@ select = [
 [tool.mypy]
 strict = true
 files = ["src"]
+
+[[tool.mypy.overrides]]
+# Geospatial + vision stacks ship no type stubs; their objects are wrapped at
+# narrow, explicitly annotated boundaries in this package.
+module = ["geopandas.*", "rasterio.*", "shapely.*", "PIL.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
