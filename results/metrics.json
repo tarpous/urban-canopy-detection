@@ -1,0 +1,64 @@
+{
+  "_comment": "Placeholder metrics so the README table renders before the T4 runs. Each model block is overwritten by results/<model>.json exported from notebooks/ (YOLO26, RF-DETR) or scripts/run_baseline.py (DeepForest). The 'status' field flips from 'pending' to 'measured' when real numbers land.",
+  "dataset": {
+    "benchmark": "NeonTreeEvaluation (weecology), evaluation split",
+    "split": "site-disjoint (geographic blocking)",
+    "status": "pending"
+  },
+  "models": [
+    {
+      "name": "DeepForest RetinaNet (published baseline)",
+      "status": "pending",
+      "map_50": null,
+      "map_50_95": null,
+      "precision": null,
+      "recall": null,
+      "recall_small": null,
+      "recall_medium": null,
+      "recall_large": null,
+      "inference": "whole-image, CPU"
+    },
+    {
+      "name": "YOLO26-s (fine-tuned)",
+      "status": "pending",
+      "map_50": null,
+      "map_50_95": null,
+      "precision": null,
+      "recall": null,
+      "recall_small": null,
+      "recall_medium": null,
+      "recall_large": null,
+      "inference": "SAHI sliced (640/128)"
+    },
+    {
+      "name": "RF-DETR (fine-tuned)",
+      "status": "pending",
+      "map_50": null,
+      "map_50_95": null,
+      "precision": null,
+      "recall": null,
+      "recall_small": null,
+      "recall_medium": null,
+      "recall_large": null,
+      "inference": "SAHI sliced (640/128)"
+    },
+    {
+      "name": "YOLO11-s (fine-tuned, lineage row)",
+      "status": "pending",
+      "map_50": null,
+      "map_50_95": null,
+      "precision": null,
+      "recall": null,
+      "recall_small": null,
+      "recall_medium": null,
+      "recall_large": null,
+      "inference": "SAHI sliced (640/128)"
+    }
+  ],
+  "sahi_effect": {
+    "status": "pending",
+    "model": "YOLO26-s",
+    "whole_image_map_50": null,
+    "sliced_map_50": null
+  }
+}
