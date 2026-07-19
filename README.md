@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/tarpous/urban-canopy-detection/actions/workflows/ci.yml/badge.svg)](https://github.com/tarpous/urban-canopy-detection/actions/workflows/ci.yml)
 
-Tree-crown detection on aerial RGB imagery, done as a **benchmark study** rather than a single model: modern detectors (YOLO26-s, RF-DETR) fine-tuned and evaluated against a published baseline (DeepForest's RetinaNet) on the open [NeonTreeEvaluation](https://github.com/weecology/NeonTreeEvaluation) dataset — with leakage-safe geographic splits, SAHI tiled inference, georeferenced GeoJSON/GeoPackage outputs, and a live demo.
+Tree-crown detection on aerial RGB imagery, done as a **benchmark study** rather than a single model: modern detectors (YOLO26-s, RF-DETR) fine-tuned and evaluated against a published baseline (DeepForest's RetinaNet) on the open [NeonTreeEvaluation](https://github.com/weecology/NeonTreeEvaluation) dataset — with leakage-safe geographic splits, SAHI tiled inference, georeferenced GeoJSON/GeoPackage outputs, and a Gradio demo app.
 
 The engineering that makes the numbers trustworthy — byte-exact label converters, site-disjoint splits, a from-scratch COCO-mAP, and pixel→CRS round-tripping — is unit-tested and CPU-only; the GPU fine-tunes are headless scripts that import this same tested package, so the only untested surface is the training call itself. All models below were trained and evaluated **locally on an RTX 4080 SUPER** (a few minutes each) and scored on the identical held-out site split.
 
@@ -13,19 +13,19 @@ The engineering that makes the numbers trustworthy — byte-exact label converte
 
 | Model | mAP@50 | mAP@[.5:.95] | P | R | R small | R med | R large | Inference |
 |---|---:|---:|---:|---:|---:|---:|---:|---|
-| RF-DETR (fine-tuned) 🕒 | — | — | — | — | — | — | — | SAHI sliced (640/128) |
+| RF-DETR (fine-tuned) (pending) | — | — | — | — | — | — | — | SAHI sliced (640/128) |
 | YOLO26-s (fine-tuned) | 0.391 | 0.160 | 0.577 | 0.494 | 0.433 | 0.532 | 0.500 | tile (≤imgsz) |
 | YOLO11-s (fine-tuned, lineage row) | 0.455 | 0.179 | 0.530 | 0.562 | 0.527 | 0.584 | 0.333 | tile (≤imgsz) |
 | DeepForest RetinaNet (published baseline) | 0.583 | 0.223 | 0.745 | 0.615 | 0.505 | 0.682 | 0.667 | whole-image, CPU |
 
 **SAHI effect (YOLO26-s):** whole-image mAP@50 — → sliced —.
 
-🕒 = awaiting the T4 fine-tune run; see `notebooks/`.
+(pending) = no run recorded yet in `results/metrics.json`; see `scripts/`.
 <!-- results:end -->
 
-The table renders directly from `results/metrics.json`; every filled row is a real local run (RF-DETR 🕒 is the one still pending). All four models are scored on the **same 39 held-out val tiles** from held-out sites, so the comparison is apples-to-apples.
+The table renders directly from `results/metrics.json`; every filled row is a real local run (RF-DETR is the one still pending). All models are scored on the **same 39 held-out val tiles** from held-out sites, so the comparison is apples-to-apples.
 
-**Reading the result honestly.** The published DeepForest baseline (mAP@50 0.58) leads the fine-tuned YOLO models (0.39–0.46) — and that is the expected, defensible outcome, not a failure: DeepForest's RetinaNet was trained on NEON's full training corpus (10k+ annotated crowns), while these YOLO models were fine-tuned on only ~92 tiles from a handful of sites (a deliberately lite local run — the code and `download_neon.py` support the full 4.5 GB training set, which is what would close the gap). It replaces the original 2024 "90% precision" claim (precision without recall or mAP invites hard interview questions) with a full mAP / per-size comparison against literature. The consistent signal across *all* models is the per-size recall gap — small crowns (~0.43–0.53) are found far less reliably than large ones (~0.33–0.67) — which is the real, reproducible finding aerial crown detection cares about.
+**Reading the result honestly.** The published DeepForest baseline (mAP@50 0.58) leads the fine-tuned YOLO models (0.39–0.46) — and that is the expected, defensible outcome, not a failure: DeepForest's RetinaNet was trained on NEON's full training corpus (10k+ annotated crowns), while these YOLO models were fine-tuned on only ~92 tiles from a handful of sites (a deliberately lite local run — the code and `download_neon.py` support the full 4.5 GB training set, which is what would close the gap). Precision is never reported alone: without recall and mAP alongside it, a detection precision number is close to meaningless. The consistent signal across *all* models is the per-size recall gap — small crowns (~0.43–0.53) are found far less reliably than large ones (~0.33–0.67) — which is the real, reproducible finding aerial crown detection cares about.
 
 ## Quickstart
 
@@ -107,10 +107,6 @@ tests/              79 tests (77 offline + 2 CPU training-wiring smoke tests)
 - **Evaluation-split cross-validation.** The pipeline trains and validates on the benchmark's *evaluation* split with geographic blocking; the much larger `training.zip` is optional and not used by default, so absolute mAP is lower than a full-data run would give — the comparison across models on identical splits is the point, not a leaderboard number.
 - **Benchmark label noise.** Hand-drawn crown boxes disagree between annotators, especially in dense canopy; treat small mAP differences between models with corresponding skepticism.
 - **RGB only.** The NEON LiDAR/hyperspectral channels that can disambiguate touching crowns are not used here.
-
-## Provenance
-
-Originally built Fall 2024 as an independent project (a YOLOv5 fine-tune with a QGIS density map). Published and modernized in 2026: YOLO26/RF-DETR against a published baseline, leakage-safe splits, a tested mAP implementation, SAHI inference, georeferenced outputs, and a demo. No backdated history — the commit log is the build log.
 
 ## License
 

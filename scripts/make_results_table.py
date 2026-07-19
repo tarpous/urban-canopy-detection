@@ -35,7 +35,7 @@ def render(metrics: dict) -> str:
         "|---|---:|---:|---:|---:|---:|---:|---:|---|",
     ]
     for model in metrics["models"]:
-        pending = " 🕒" if model["status"] != "measured" else ""
+        pending = " (pending)" if model["status"] != "measured" else ""
         lines.append(
             f"| {model['name']}{pending} "
             f"| {cell(model['map_50'])} | {cell(model['map_50_95'])} "
@@ -51,7 +51,7 @@ def render(metrics: dict) -> str:
     )
     if any(model["status"] != "measured" for model in metrics["models"]):
         lines.append("")
-        lines.append("🕒 = awaiting the T4 fine-tune run; see `notebooks/`.")
+        lines.append("(pending) = no run recorded yet in `results/metrics.json`; see `scripts/`.")
     return "\n".join(lines) + "\n"
 
 
