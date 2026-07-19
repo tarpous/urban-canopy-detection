@@ -32,3 +32,6 @@ weights/
 # OS
 Thumbs.db
 .DS_Store
+
+# Repo-local model/weights caches (HF_HOME, TORCH_HOME, YOLO_CONFIG_DIR)
+.cache/

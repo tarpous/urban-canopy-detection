@@ -13,7 +13,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
+
+# Keep every model/weights cache inside the repo (gitignored), not the machine.
+_CACHE = str(Path(__file__).resolve().parents[1] / ".cache")
+os.environ.setdefault("HF_HOME", _CACHE + "/huggingface")
+os.environ.setdefault("TORCH_HOME", _CACHE + "/torch")
 
 from urban_canopy.dataset import discover_pairs
 from urban_canopy.evaluate import Detection
