@@ -1,5 +1,0 @@
-path: C:\Users\nikts\Desktop\cv_projects\urban-canopy-detection\data\yolo_smoke
-train: images/train
-val: images/val
-names:
-  0: Tree
