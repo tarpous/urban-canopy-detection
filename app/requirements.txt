@@ -1,0 +1,6 @@
+# Hugging Face Space (CPU) runtime deps.
+gradio>=5.0
+pillow>=11
+ultralytics>=8.3
+# The tested package that owns slicing/NMS/geo:
+urban-canopy-detection @ git+https://github.com/tarpous/urban-canopy-detection.git
