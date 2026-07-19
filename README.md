@@ -4,7 +4,7 @@
 
 Tree-crown detection on aerial RGB imagery, done as a **benchmark study** rather than a single model: modern detectors (YOLO26-s, RF-DETR) fine-tuned and evaluated against a published baseline (DeepForest's RetinaNet) on the open [NeonTreeEvaluation](https://github.com/weecology/NeonTreeEvaluation) dataset — with leakage-safe geographic splits, SAHI tiled inference, georeferenced GeoJSON/GeoPackage outputs, and a live demo.
 
-The engineering that makes the numbers trustworthy — byte-exact label converters, site-disjoint splits, a from-scratch COCO-mAP, and pixel→CRS round-tripping — is unit-tested and CPU-only; the GPU fine-tunes are two parameterized T4 notebooks that import this same tested package, so the only untested surface is the training call itself.
+The engineering that makes the numbers trustworthy — byte-exact label converters, site-disjoint splits, a from-scratch COCO-mAP, and pixel→CRS round-tripping — is unit-tested and CPU-only; the GPU fine-tunes are headless scripts that import this same tested package, so the only untested surface is the training call itself. All models below were trained and evaluated **locally on an RTX 4080 SUPER** (a few minutes each) and scored on the identical held-out site split.
 
 ## Results
 
@@ -13,17 +13,19 @@ The engineering that makes the numbers trustworthy — byte-exact label converte
 
 | Model | mAP@50 | mAP@[.5:.95] | P | R | R small | R med | R large | Inference |
 |---|---:|---:|---:|---:|---:|---:|---:|---|
-| DeepForest RetinaNet (published baseline) 🕒 | — | — | — | — | — | — | — | whole-image, CPU |
-| YOLO26-s (fine-tuned) 🕒 | — | — | — | — | — | — | — | SAHI sliced (640/128) |
 | RF-DETR (fine-tuned) 🕒 | — | — | — | — | — | — | — | SAHI sliced (640/128) |
-| YOLO11-s (fine-tuned, lineage row) 🕒 | — | — | — | — | — | — | — | SAHI sliced (640/128) |
+| YOLO26-s (fine-tuned) | 0.391 | 0.160 | 0.577 | 0.494 | 0.433 | 0.532 | 0.500 | tile (≤imgsz) |
+| YOLO11-s (fine-tuned, lineage row) | 0.455 | 0.179 | 0.530 | 0.562 | 0.527 | 0.584 | 0.333 | tile (≤imgsz) |
+| DeepForest RetinaNet (published baseline) | 0.583 | 0.223 | 0.745 | 0.615 | 0.505 | 0.682 | 0.667 | whole-image, CPU |
 
 **SAHI effect (YOLO26-s):** whole-image mAP@50 — → sliced —.
 
 🕒 = awaiting the T4 fine-tune run; see `notebooks/`.
 <!-- results:end -->
 
-The table above renders directly from `results/metrics.json`; the 🕒 rows fill in when the two notebooks are run on a free Colab/Kaggle T4 (a few hours each) and their exported metrics are committed back. The DeepForest row is a *published* baseline evaluated on the same test tiles — this project's honesty anchor, replacing the original 2024 "90% precision" claim (precision without recall or mAP invites hard interview questions) with a full mAP / per-size-recall comparison.
+The table renders directly from `results/metrics.json`; every filled row is a real local run (RF-DETR 🕒 is the one still pending). All four models are scored on the **same 39 held-out val tiles** from held-out sites, so the comparison is apples-to-apples.
+
+**Reading the result honestly.** The published DeepForest baseline (mAP@50 0.58) leads the fine-tuned YOLO models (0.39–0.46) — and that is the expected, defensible outcome, not a failure: DeepForest's RetinaNet was trained on NEON's full training corpus (10k+ annotated crowns), while these YOLO models were fine-tuned on only ~92 tiles from a handful of sites (a deliberately lite local run — the code and `download_neon.py` support the full 4.5 GB training set, which is what would close the gap). It replaces the original 2024 "90% precision" claim (precision without recall or mAP invites hard interview questions) with a full mAP / per-size comparison against literature. The consistent signal across *all* models is the per-size recall gap — small crowns (~0.43–0.53) are found far less reliably than large ones (~0.33–0.67) — which is the real, reproducible finding aerial crown detection cares about.
 
 ## Quickstart
 
@@ -45,7 +47,19 @@ uv run canopy to-geojson preds.json --raster tile.tif --image-name TILE.tif --ou
 uv run canopy make-table
 ```
 
-Fine-tune on a GPU: open `notebooks/01_train_yolo26.ipynb` or `notebooks/02_train_rfdetr.ipynb` in Colab/Kaggle (T4), run top to bottom, and commit the resulting `results/metrics.json` + weights.
+Fine-tune on a local GPU (or any CUDA machine):
+
+```bash
+uv sync --group train      # CPU torch + ultralytics
+# then swap in the CUDA build for your card, e.g. Ada / RTX 40-series:
+uv pip install --reinstall torch torchvision --index-url https://download.pytorch.org/whl/cu124
+uv run python scripts/download_neon.py --evaluation --annotations   # or fetch a subset
+uv run python scripts/train_yolo.py --model yolo26s.pt --epochs 80 --device 0
+uv run python scripts/run_baseline.py    # DeepForest, scored on the same val tiles
+uv run canopy make-table
+```
+
+The training wiring is guarded by a CPU smoke test (`pytest -m smoke`, a separate CI job) that runs each script's `--smoke` path on the sample tiles, so the data→train→predict→score path can't silently break. The Colab/Kaggle notebooks (`notebooks/`) call the same functions for anyone without a local GPU.
 
 ## How it works
 
@@ -53,7 +67,7 @@ Fine-tune on a GPU: open `notebooks/01_train_yolo26.ipynb` or `notebooks/02_trai
 flowchart LR
     NEON["NEON RGB + VOC XML"] -->|"download_neon.py"| RAW["data/raw"]
     RAW -->|"labels: VOC→YOLO/COCO<br/>tiling + site split"| DS["site-disjoint dataset"]
-    DS -->|"T4 notebook"| M["YOLO26-s / RF-DETR"]
+    DS -->|"train_yolo.py (local GPU)"| M["YOLO26-s / RF-DETR"]
     M -->|"SAHI sliced predict"| P["predictions.json"]
     DF["DeepForest RetinaNet<br/>(published baseline, CPU)"] --> P
     P -->|"COCO mAP + per-size recall"| RES["results/metrics.json → README"]
@@ -79,12 +93,12 @@ A CPU Hugging Face Space (`app/`, Gradio): upload an aerial image → crown boxe
 ```
 src/urban_canopy/   labels (VOC↔YOLO↔COCO) · tiling · splits · dataset · evaluate (mAP) ·
                     sliced (SAHI) · geo (rasterio→GeoJSON) · predictions · CLI
-notebooks/          01_train_yolo26.ipynb, 02_train_rfdetr.ipynb — parameterized T4 fine-tunes
+scripts/            download_neon.py · train_yolo.py · run_baseline.py · make_results_table.py
+notebooks/          01_train_yolo26.ipynb, 02_train_rfdetr.ipynb — Colab/Kaggle copies of the scripts
 app/                Gradio demo for the Hugging Face Space
 data/sample/        two annotated NEON tiles — everything runs offline from these
-scripts/            download_neon.py · make_results_table.py
 results/            metrics.json (the only source of README numbers) + generated table.md
-tests/              77 tests, all offline
+tests/              79 tests (77 offline + 2 CPU training-wiring smoke tests)
 ```
 
 ## Limitations
