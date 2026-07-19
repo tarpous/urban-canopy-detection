@@ -26,6 +26,17 @@ dev = [
     "types-pyyaml>=6.0.12.20260518",
     "numpy>=2.5.1",
 ]
+# Non-default group: the GPU training stack. NOT installed by the default
+# `uv sync` (so CI stays CPU-only and lean) — install locally with
+# `uv sync --group train`. torch resolves to the CPU wheel in the lock so the
+# CI smoke job works; on the 4080S, swap in the CUDA build afterwards:
+#   uv pip install --reinstall torch torchvision --index-url https://download.pytorch.org/whl/cu124
+train = [
+    "torch>=2.6",
+    "torchvision>=0.21",
+    "ultralytics>=8.3",
+    "sahi>=0.11",
+]
 
 [project.scripts]
 canopy = "urban_canopy.cli:app"
@@ -72,6 +83,9 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--cov=urban_canopy --cov-report=term-missing"
+markers = [
+    "smoke: training-wiring tests that need the `train` group (uv sync --group train)",
+]
 
 [tool.coverage.run]
 source = ["src/urban_canopy"]
