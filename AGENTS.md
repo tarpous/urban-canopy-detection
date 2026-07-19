@@ -26,9 +26,17 @@
 - `scripts/` — dataset download + results-table generation
 - `results/` — generated metrics; the only source of README numbers
 
+## CLI
+
+`uv run canopy` (see `--help`): `build-dataset` (VOC → YOLO/COCO, site-disjoint),
+`score` (predictions JSON vs benchmark, `--update-metrics` writes results/metrics.json),
+`to-geojson` (georeference one image's predictions), `make-table` (regenerate README table).
+
 ## Conventions
 
 - Conventional-commit messages (`feat:`, `fix:`, `test:`, `docs:`, `chore:`, `ci:`). No co-author trailers.
-- GPU work never runs locally — training/fine-tuning lives in `notebooks/` for Colab/Kaggle T4.
+- GPU work never runs locally — training/fine-tuning lives in `notebooks/` (ruff-excluded) for Colab/Kaggle T4.
 - Train/val splits are by NEON site (geographic blocking); the leakage test must always pass.
+- README numbers come only from `results/metrics.json` via `scripts/make_results_table.py`.
+- The Gradio app (`app/`) reuses the tested package and boots in a synthetic mode without weights.
 - No personal details of the repo owner in committed content.
