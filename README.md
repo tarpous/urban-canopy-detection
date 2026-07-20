@@ -92,16 +92,17 @@ Detections are georeferenced to the tile's UTM CRS and aggregated into a crown-d
 
 ## Demo
 
-A CPU Hugging Face Space (`app/`, Gradio): upload an aerial image → crown boxes + count + downloadable GeoJSON. It reuses the same tested slicing/NMS/geo code; with no weights present it runs in a synthetic mode so the Space always boots. Deploy steps are in [`app/DEPLOY.md`](app/DEPLOY.md); the link goes here once the Space is live.
+**Live: [huggingface.co/spaces/tarpous/urban-canopy-detection](https://huggingface.co/spaces/tarpous/urban-canopy-detection)** — upload an aerial RGB image (or try a bundled NEON tile) → crown boxes + count + downloadable GeoJSON. The fine-tuned YOLO26-s is exported to ONNX (`scripts/export_onnx.py`) and runs **entirely in the visitor's browser** via ONNX Runtime Web (WASM) — no server, nothing uploaded, and free to host as a static Space. YOLO26's NMS-free head makes the in-browser postprocessing a simple score threshold. The source is in [`app/static/`](app/static/); a Gradio version (`app/app.py`, [`app/DEPLOY.md`](app/DEPLOY.md)) is kept for local use or a PRO Space.
 
 ## Repository layout
 
 ```
 src/urban_canopy/   labels (VOC↔YOLO↔COCO) · tiling · splits · dataset · evaluate (mAP) ·
                     sliced (SAHI) · geo (rasterio→GeoJSON) · predictions · CLI
-scripts/            download_neon.py · train_yolo.py · run_baseline.py · make_results_table.py
+scripts/            download_neon.py · train_yolo.py · train_rfdetr.py · run_baseline.py ·
+                    sahi_effect.py · make_figures.py · make_results_table.py · export_onnx.py
 notebooks/          01_train_yolo26.ipynb, 02_train_rfdetr.ipynb — Colab/Kaggle copies of the scripts
-app/                Gradio demo for the Hugging Face Space
+app/static/         in-browser ONNX demo (the live static Space); app/app.py is the Gradio variant
 data/sample/        two annotated NEON tiles — everything runs offline from these
 results/            metrics.json (the only source of README numbers) + generated table.md
 tests/              79 tests (77 offline + 2 CPU training-wiring smoke tests)

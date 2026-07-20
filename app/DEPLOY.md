@@ -1,31 +1,30 @@
-# Deploying the demo as a private Hugging Face Space
+# Deploying the demo
 
-The Space is created and pushed from *your* account (`tarpous`) — this repo
-stages every file it needs. One-time setup:
+The **live demo** is a free **static** Hugging Face Space that runs the detector
+in the browser (ONNX Runtime Web) — [`app/static/`](static/). Hosting Gradio
+Spaces on the free tier now requires HF PRO, so the static route is the free,
+public, zero-backend option; `app/app.py` is kept as a Gradio variant for local
+use or a PRO Space.
 
-1. Create a token at <https://huggingface.co/settings/tokens> (write scope) and
-   log in locally:
+## Static Space (live, free)
 
-   ```bash
-   uv run --with huggingface_hub huggingface-cli login
-   ```
+```bash
+uv run python scripts/export_onnx.py                 # writes app/static/best.onnx
+uv run --with huggingface_hub python - <<'PY'
+from huggingface_hub import HfApi, create_repo
+api = HfApi(); repo = f"{api.whoami()['name']}/urban-canopy-detection"
+create_repo(repo, repo_type="space", space_sdk="static", exist_ok=True)
+api.upload_folder(folder_path="app/static", repo_id=repo, repo_type="space",
+                  commit_message="in-browser YOLO26 demo")
+print("https://huggingface.co/spaces/" + repo)
+PY
+```
 
-2. Create a **private** Gradio Space and push the `app/` contents to it:
+Requires a one-time `huggingface-cli login` (write token). The Space is public
+and runs entirely client-side — nothing is uploaded to a server.
 
-   ```bash
-   uv run --with huggingface_hub huggingface-cli repo create \
-     urban-canopy-detection --repo-type space --space-sdk gradio --private -y
+## Gradio Space (local, or a PRO Space)
 
-   git clone https://huggingface.co/spaces/tarpous/urban-canopy-detection hf-space
-   cp app/app.py app/requirements.txt app/README.md hf-space/
-   mkdir -p hf-space/weights
-   cp runs/detect/runs/yolo26/weights/best.pt hf-space/weights/   # your trained YOLO26-s checkpoint
-   cd hf-space && git lfs install && git lfs track "*.pt" && git add -A
-   git commit -m "deploy urban canopy detection demo" && git push
-   ```
-
-The Space stays private (visible only to you) until you flip it to public in the
-Space's Settings. Add the resulting URL to the repo README's Demo section.
-
-> The app boots without `weights/best.pt` in a synthetic-box mode, so the Space
-> is inspectable even before you upload a checkpoint.
+Run locally with `uv run --with gradio python app/app.py`, or push `app/app.py`
++ `app/requirements.txt` + `app/README.md` (and a `weights/best.pt`) to a
+Gradio Space — that requires an HF PRO subscription on the free CPU tier.
