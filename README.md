@@ -13,19 +13,17 @@ The engineering that makes the numbers trustworthy — byte-exact label converte
 
 | Model | mAP@50 | mAP@[.5:.95] | P | R | R small | R med | R large | Inference |
 |---|---:|---:|---:|---:|---:|---:|---:|---|
-| RF-DETR (fine-tuned) (pending) | — | — | — | — | — | — | — | SAHI sliced (640/128) |
 | YOLO26-s (fine-tuned) | 0.391 | 0.160 | 0.577 | 0.494 | 0.433 | 0.532 | 0.500 | tile (≤imgsz) |
 | YOLO11-s (fine-tuned, lineage row) | 0.455 | 0.179 | 0.530 | 0.562 | 0.527 | 0.584 | 0.333 | tile (≤imgsz) |
 | DeepForest RetinaNet (published baseline) | 0.583 | 0.223 | 0.745 | 0.615 | 0.505 | 0.682 | 0.667 | whole-image, CPU |
+| RF-DETR (fine-tuned) | 0.624 | 0.256 | 0.626 | 0.656 | 0.567 | 0.710 | 0.833 | tile (640) |
 
 **SAHI effect (YOLO26-s):** whole-image mAP@50 — → sliced —.
-
-(pending) = no run recorded yet in `results/metrics.json`; see `scripts/`.
 <!-- results:end -->
 
-The table renders directly from `results/metrics.json`; every filled row is a real local run (RF-DETR is the one still pending). All models are scored on the **same 39 held-out val tiles** from held-out sites, so the comparison is apples-to-apples.
+The table renders directly from `results/metrics.json`; every row is a real local run. All models are scored on the **same 39 held-out val tiles** from held-out sites, so the comparison is apples-to-apples.
 
-**Reading the result honestly.** The published DeepForest baseline (mAP@50 0.58) leads the fine-tuned YOLO models (0.39–0.46) — and that is the expected, defensible outcome, not a failure: DeepForest's RetinaNet was trained on NEON's full training corpus (10k+ annotated crowns), while these YOLO models were fine-tuned on only ~92 tiles from a handful of sites (a deliberately lite local run — the code and `download_neon.py` support the full 4.5 GB training set, which is what would close the gap). Precision is never reported alone: without recall and mAP alongside it, a detection precision number is close to meaningless. The consistent signal across *all* models is the per-size recall gap — small crowns (~0.43–0.53) are found far less reliably than large ones (~0.33–0.67) — which is the real, reproducible finding aerial crown detection cares about.
+**Reading the result.** The fine-tuned **RF-DETR transformer leads at mAP@50 0.62**, edging past the published DeepForest baseline (0.58) even though it was fine-tuned on only ~92 tiles from a handful of sites — a genuinely strong showing for a modern DETR-class detector on a lite training budget. The YOLO models trail (0.39–0.46): a small-data regime favours the DETR's set-based matching over YOLO's dense anchors, and the full 4.5 GB training set (which `download_neon.py` supports) would lift all of them. Two honest caveats travel with the headline: precision is never reported alone (without recall and mAP beside it a detection precision number means little — note RF-DETR's lower precision but higher recall than the baseline), and the reproducible signal across *every* model is the per-size gap — small crowns (recall ~0.43–0.57) are found far less reliably than large ones (~0.33–0.83), which is the finding aerial crown detection actually cares about.
 
 ## Quickstart
 
@@ -55,6 +53,8 @@ uv sync --group train      # CPU torch + ultralytics
 uv pip install --reinstall torch torchvision --index-url https://download.pytorch.org/whl/cu124
 uv run python scripts/download_neon.py --evaluation --annotations   # or fetch a subset
 uv run python scripts/train_yolo.py --model yolo26s.pt --epochs 80 --device 0
+uv pip install rfdetr albumentations pycocotools   # optional RF-DETR extra
+uv run python scripts/train_rfdetr.py --epochs 50
 uv run python scripts/run_baseline.py    # DeepForest, scored on the same val tiles
 uv run canopy make-table
 ```
@@ -86,7 +86,7 @@ Three design choices carry the project:
 
 ## Demo
 
-A CPU Hugging Face Space (`app/`, Gradio): upload an aerial image → crown boxes + count + downloadable GeoJSON. It reuses the same tested slicing/NMS/geo code; with no weights present it runs in a synthetic mode so the Space always boots. *(Link added once the Space is deployed.)*
+A CPU Hugging Face Space (`app/`, Gradio): upload an aerial image → crown boxes + count + downloadable GeoJSON. It reuses the same tested slicing/NMS/geo code; with no weights present it runs in a synthetic mode so the Space always boots. Deploy steps are in [`app/DEPLOY.md`](app/DEPLOY.md); the link goes here once the Space is live.
 
 ## Repository layout
 

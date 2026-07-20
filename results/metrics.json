@@ -7,18 +7,6 @@
   },
   "models": [
     {
-      "name": "RF-DETR (fine-tuned)",
-      "status": "pending",
-      "map_50": null,
-      "map_50_95": null,
-      "precision": null,
-      "recall": null,
-      "recall_small": null,
-      "recall_medium": null,
-      "recall_large": null,
-      "inference": "SAHI sliced (640/128)"
-    },
-    {
       "name": "YOLO26-s (fine-tuned)",
       "status": "measured",
       "map_50": 0.3909,
@@ -53,6 +41,18 @@
       "recall_medium": 0.6819,
       "recall_large": 0.6667,
       "inference": "whole-image, CPU"
+    },
+    {
+      "name": "RF-DETR (fine-tuned)",
+      "status": "measured",
+      "map_50": 0.624,
+      "map_50_95": 0.2559,
+      "precision": 0.626,
+      "recall": 0.6563,
+      "recall_small": 0.5671,
+      "recall_medium": 0.7098,
+      "recall_large": 0.8333,
+      "inference": "tile (640)"
     }
   ],
   "sahi_effect": {

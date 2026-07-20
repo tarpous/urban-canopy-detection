@@ -47,3 +47,12 @@ def test_run_baseline_smoke_wiring() -> None:
     result = run_script("scripts/run_baseline.py", "--smoke")
     assert result.returncode == 0, result.stderr[-2000:]
     assert "smoke OK" in result.stdout
+
+
+def test_train_rfdetr_smoke_wiring() -> None:
+    # RF-DETR is an optional extra (`uv pip install rfdetr`), not in the locked
+    # train group; skip when it isn't installed so the lean CI job stays green.
+    pytest.importorskip("rfdetr", reason="rfdetr not installed (optional extra)")
+    result = run_script("scripts/train_rfdetr.py", "--smoke")
+    assert result.returncode == 0, result.stderr[-3000:]
+    assert "smoke OK" in result.stdout
