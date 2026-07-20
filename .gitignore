@@ -37,3 +37,4 @@ Thumbs.db
 .cache/
 data/yolo_smoke/
 Ultralytics/
+data/coco_smoke/
