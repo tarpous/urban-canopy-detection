@@ -80,8 +80,11 @@ def main() -> None:
                 for b, s in zip(out.boxes.xyxy.tolist(), out.boxes.conf.tolist(), strict=True)
             ]
             sliced = sliced_predict(
-                width, height, lambda w, im=image: detect_crop(im, w),
-                tile_size=args.slice, overlap=args.overlap,
+                width,
+                height,
+                lambda w, im=image: detect_crop(im, w),
+                tile_size=args.slice,
+                overlap=args.overlap,
             )
         whole_preds.append(whole)
         sliced_preds.append([d for d in sliced if d.score >= args.conf])
