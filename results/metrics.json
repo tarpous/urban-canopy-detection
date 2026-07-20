@@ -7,18 +7,6 @@
   },
   "models": [
     {
-      "name": "YOLO26-s (fine-tuned)",
-      "status": "measured",
-      "map_50": 0.3909,
-      "map_50_95": 0.1602,
-      "precision": 0.5769,
-      "recall": 0.4945,
-      "recall_small": 0.4329,
-      "recall_medium": 0.5321,
-      "recall_large": 0.5,
-      "inference": "tile (\u2264imgsz)"
-    },
-    {
       "name": "YOLO11-s (fine-tuned, lineage row)",
       "status": "measured",
       "map_50": 0.4549,
@@ -53,6 +41,18 @@
       "recall_medium": 0.7098,
       "recall_large": 0.8333,
       "inference": "tile (640)"
+    },
+    {
+      "name": "YOLO26-s (fine-tuned)",
+      "status": "measured",
+      "map_50": 0.41,
+      "map_50_95": 0.1648,
+      "precision": 0.5597,
+      "recall": 0.5124,
+      "recall_small": 0.4802,
+      "recall_medium": 0.534,
+      "recall_large": 0.1667,
+      "inference": "tile (\u2264imgsz)"
     }
   ],
   "sahi_effect": {

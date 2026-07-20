@@ -1,8 +1,8 @@
 """``canopy`` — CPU-side command line for data prep, scoring and geo export.
 
-Training lives in the T4 notebooks; everything here runs on a laptop:
-build detector-ready datasets, score a predictions file against the benchmark,
-refresh the README table, and georeference a predictions file to GeoJSON.
+Training lives in ``scripts/train_*.py`` (local GPU); everything here runs on a
+laptop: build detector-ready datasets, score a predictions file against the
+benchmark, refresh the README table, and georeference predictions to GeoJSON.
 """
 
 from __future__ import annotations

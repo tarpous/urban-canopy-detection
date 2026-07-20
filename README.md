@@ -6,6 +6,8 @@ Tree-crown detection on aerial RGB imagery, done as a **benchmark study** rather
 
 The engineering that makes the numbers trustworthy — byte-exact label converters, site-disjoint splits, a from-scratch COCO-mAP, and pixel→CRS round-tripping — is unit-tested and CPU-only; the GPU fine-tunes are headless scripts that import this same tested package, so the only untested surface is the training call itself. All models below were trained and evaluated **locally on an RTX 4080 SUPER** (a few minutes each) and scored on the identical held-out site split.
 
+![Detected tree crowns on a held-out NEON tile](docs/img/detection_example.png)
+
 ## Results
 
 <!-- results:begin -->
@@ -13,10 +15,10 @@ The engineering that makes the numbers trustworthy — byte-exact label converte
 
 | Model | mAP@50 | mAP@[.5:.95] | P | R | R small | R med | R large | Inference |
 |---|---:|---:|---:|---:|---:|---:|---:|---|
-| YOLO26-s (fine-tuned) | 0.391 | 0.160 | 0.577 | 0.494 | 0.433 | 0.532 | 0.500 | tile (≤imgsz) |
 | YOLO11-s (fine-tuned, lineage row) | 0.455 | 0.179 | 0.530 | 0.562 | 0.527 | 0.584 | 0.333 | tile (≤imgsz) |
 | DeepForest RetinaNet (published baseline) | 0.583 | 0.223 | 0.745 | 0.615 | 0.505 | 0.682 | 0.667 | whole-image, CPU |
 | RF-DETR (fine-tuned) | 0.624 | 0.256 | 0.626 | 0.656 | 0.567 | 0.710 | 0.833 | tile (640) |
+| YOLO26-s (fine-tuned) | 0.410 | 0.165 | 0.560 | 0.512 | 0.480 | 0.534 | 0.167 | tile (≤imgsz) |
 
 **SAHI effect (YOLO11-s):** whole-image mAP@50 0.455 → sliced 0.450.
 <!-- results:end -->
@@ -67,7 +69,7 @@ The training wiring is guarded by a CPU smoke test (`pytest -m smoke`, a separat
 flowchart LR
     NEON["NEON RGB + VOC XML"] -->|"download_neon.py"| RAW["data/raw"]
     RAW -->|"labels: VOC→YOLO/COCO<br/>tiling + site split"| DS["site-disjoint dataset"]
-    DS -->|"train_yolo.py (local GPU)"| M["YOLO26-s / RF-DETR"]
+    DS -->|"train_yolo.py / train_rfdetr.py<br/>(local GPU)"| M["RF-DETR · YOLO26-s · YOLO11-s"]
     M -->|"SAHI sliced predict"| P["predictions.json"]
     DF["DeepForest RetinaNet<br/>(published baseline, CPU)"] --> P
     P -->|"COCO mAP + per-size recall"| RES["results/metrics.json → README"]
@@ -79,6 +81,10 @@ Three design choices carry the project:
 - **Leakage-safe splits.** Overlapping aerial tiles from one NEON site are near-duplicates; a random split leaks them across train/val and inflates every metric. Splitting by *site* (the 4-letter code in each filename) blocks that, and a test raises on any site appearing in both halves.
 - **SAHI tiled inference.** On a full orthophoto, downscaling to a detector's input erases small crowns; slicing with overlap, detecting per tile, offsetting boxes back, and de-duplicating with NMS recovers small-object recall. The table measures the effect on the 400 px benchmark tiles (whole-image 0.455 → sliced 0.450) — essentially neutral, and honestly so: at 400 px there is no resolution for slicing to recover, so SAHI earns its keep only on large scenes. The mechanism is tested; the number is reported for the data at hand rather than cherry-picked.
 - **Honest metrics.** A compact, dependency-free COCO mAP (greedy IoU matching, 101-point AP, the 0.5:0.95 sweep) lives in this repo and is cross-checked against hand-computed fixtures, so the headline number is auditable rather than hidden in a framework. Per-size **recall** (not AP) is reported by crown size, because attributing a false positive to a truth-size band is ill-defined.
+
+Detections are georeferenced to the tile's UTM CRS and aggregated into a crown-density grid (GeoPackage + choropleth, via `scripts/make_figures.py`):
+
+![Crown-density grid over a NEON tile](docs/img/canopy_density.png)
 
 ## Data
 

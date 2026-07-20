@@ -19,7 +19,7 @@ stages every file it needs. One-time setup:
    git clone https://huggingface.co/spaces/tarpous/urban-canopy-detection hf-space
    cp app/app.py app/requirements.txt app/README.md hf-space/
    mkdir -p hf-space/weights
-   cp runs/detect/runs/yolo/weights/best.pt hf-space/weights/   # your trained checkpoint
+   cp runs/detect/runs/yolo26/weights/best.pt hf-space/weights/   # your trained YOLO26-s checkpoint
    cd hf-space && git lfs install && git lfs track "*.pt" && git add -A
    git commit -m "deploy urban canopy detection demo" && git push
    ```
