@@ -92,7 +92,7 @@ Detections are georeferenced to the tile's UTM CRS and aggregated into a crown-d
 
 ## Demo
 
-**Live: [huggingface.co/spaces/tarpous/urban-canopy-detection](https://huggingface.co/spaces/tarpous/urban-canopy-detection)** — upload an aerial RGB image (or try a bundled NEON tile) → crown boxes + count + downloadable GeoJSON. The fine-tuned YOLO26-s is exported to ONNX (`scripts/export_onnx.py`) and runs **entirely in the visitor's browser** via ONNX Runtime Web (WASM) — no server, nothing uploaded, and free to host as a static Space. YOLO26's NMS-free head makes the in-browser postprocessing a simple score threshold. The source is in [`app/static/`](app/static/); a Gradio version (`app/app.py`, [`app/DEPLOY.md`](app/DEPLOY.md)) is kept for local use or a PRO Space.
+**Live: [huggingface.co/spaces/tarpous/urban-canopy-detection](https://huggingface.co/spaces/tarpous/urban-canopy-detection)** — upload an aerial RGB image (or try a bundled NEON tile) → crown boxes + count + downloadable GeoJSON. The fine-tuned YOLO26-s is exported to ONNX (`scripts/export_onnx.py`) and runs **entirely in the visitor's browser** via ONNX Runtime Web — WebGPU-accelerated where available, with a WASM CPU fallback — no server, nothing uploaded, and free to host as a static Space. YOLO26's NMS-free head makes the in-browser postprocessing a simple score threshold, so the confidence slider re-filters the cached detections instantly without re-running the model. The source is in [`app/static/`](app/static/); a Gradio version (`app/app.py`, [`app/DEPLOY.md`](app/DEPLOY.md)) is kept for local use or a PRO Space.
 
 ## Repository layout
 

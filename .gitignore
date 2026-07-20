@@ -20,6 +20,7 @@ htmlcov/
 # Data: raw downloads are fetched by scripts, only data/sample/ is committed
 data/raw/
 data/yolo/
+data/yolo26/
 data/coco/
 
 # Model artifacts stay local; commit only results/*.json + a few figures

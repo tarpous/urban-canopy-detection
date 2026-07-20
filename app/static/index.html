@@ -59,12 +59,15 @@
     Boxes are drawn client-side; the GeoJSON export uses pixel coordinates.</p>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.webgpu.min.js"></script>
 <script>
-const IMGSZ = 640, MODEL_URL = "best.onnx";
+const IMGSZ = 640, MODEL_URL = "best.onnx", SCORE_FLOOR = 0.05;
 const SAMPLES = ["samples/sample1.png", "samples/sample2.png"];
 const $ = (id) => document.getElementById(id);
-let session = null, lastBoxes = [], lastImg = null;
+// rawBoxes: every candidate above SCORE_FLOOR from ONE inference; the slider
+// re-filters this cache client-side, so changing the threshold never re-runs
+// the model.
+let session = null, backend = "wasm", rawBoxes = [], lastImg = null;
 
 function buildSamples() {
   const box = document.querySelector(".samples");
@@ -78,14 +81,35 @@ function buildSamples() {
 }
 
 async function init() {
+  const CDN = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/";
+  ort.env.wasm.wasmPaths = CDN;
+  // WebGPU when the browser exposes it (10-50x faster than WASM here), else the
+  // SIMD WASM CPU backend. Cross-origin isolation isn't set on a static Space,
+  // so multi-threaded WASM (SharedArrayBuffer) is unavailable — keep 1 thread.
+  ort.env.wasm.numThreads = 1;
+  const providers = navigator.gpu ? ["webgpu", "wasm"] : ["wasm"];
   try {
-    ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/";
-    session = await ort.InferenceSession.create(MODEL_URL, { executionProviders: ["wasm"] });
-    $("status").textContent = "Model ready — upload an aerial RGB image, or try a sample.";
+    session = await ort.InferenceSession.create(MODEL_URL, {
+      executionProviders: providers,
+      graphOptimizationLevel: "all",
+    });
+    backend = session.handler?._ep || (navigator.gpu ? "webgpu" : "wasm");
+    await warmup();
+    const label = navigator.gpu ? "GPU (WebGPU)" : "CPU (WASM)";
+    $("status").textContent = "Model ready on " + label + " — upload an aerial RGB image, or try a sample.";
     buildSamples();
   } catch (e) {
     $("status").textContent = "Failed to load model: " + e.message;
   }
+}
+
+// One dummy pass so the first real detection isn't paying shader/kernel
+// compilation cost while the user waits.
+async function warmup() {
+  try {
+    const zeros = new Float32Array(3 * IMGSZ * IMGSZ);
+    await session.run({ images: new ort.Tensor("float32", zeros, [1, 3, IMGSZ, IMGSZ]) });
+  } catch { /* non-fatal */ }
 }
 
 function letterbox(img) {
@@ -112,26 +136,37 @@ function toTensor(rgba) {
 async function run(img) {
   if (!session) return;
   $("status").textContent = "Running detection…";
+  const t0 = performance.now();
   const { data, scale, padX, padY } = letterbox(img);
   const out = await session.run({ images: toTensor(data) });
   const t = out[Object.keys(out)[0]]; // [1,300,6]
-  const conf = parseFloat($("conf").value);
   const [, num, step] = t.dims;
-  const boxes = [];
+  // Keep every candidate above a low floor once; the slider filters this cache.
+  rawBoxes = [];
   for (let i = 0; i < num; i++) {
     const o = i * step, score = t.data[o + 4];
-    if (score < conf) continue;
-    boxes.push({
+    if (score < SCORE_FLOOR) continue;
+    rawBoxes.push({
       x1: (t.data[o] - padX) / scale, y1: (t.data[o + 1] - padY) / scale,
       x2: (t.data[o + 2] - padX) / scale, y2: (t.data[o + 3] - padY) / scale,
       score,
     });
   }
-  lastBoxes = boxes; lastImg = img;
-  draw(img, boxes);
+  lastImg = img;
+  const ms = Math.round(performance.now() - t0);
+  applyThreshold(ms);
+}
+
+// Client-side filter + redraw only; never re-runs the model.
+function applyThreshold(inferMs) {
+  if (!lastImg) return;
+  const conf = parseFloat($("conf").value);
+  const boxes = rawBoxes.filter((b) => b.score >= conf);
+  draw(lastImg, boxes);
   $("count").textContent = boxes.length;
   $("download").disabled = boxes.length === 0;
-  $("status").textContent = "Done — " + boxes.length + " crowns above threshold " + conf + ".";
+  const timing = inferMs != null ? " (" + inferMs + " ms)" : "";
+  $("status").textContent = "Done — " + boxes.length + " crowns above threshold " + conf + timing + ".";
 }
 
 function draw(img, boxes) {
@@ -158,10 +193,11 @@ $("file").addEventListener("change", (e) => {
 });
 $("conf").addEventListener("input", () => {
   $("confVal").textContent = $("conf").value;
-  if (lastImg) run(lastImg);
+  applyThreshold(); // re-filter cached detections; no re-inference
 });
 $("download").addEventListener("click", () => {
-  const features = lastBoxes.map((b, i) => ({
+  const conf = parseFloat($("conf").value);
+  const features = rawBoxes.filter((b) => b.score >= conf).map((b, i) => ({
     type: "Feature", properties: { crown_id: i, score: Math.round(b.score * 1000) / 1000 },
     geometry: { type: "Polygon", coordinates: [[[b.x1, b.y1], [b.x2, b.y1], [b.x2, b.y2], [b.x1, b.y2], [b.x1, b.y1]]] },
   }));
