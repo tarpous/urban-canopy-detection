@@ -36,3 +36,4 @@ Thumbs.db
 # Repo-local model/weights caches (HF_HOME, TORCH_HOME, YOLO_CONFIG_DIR)
 .cache/
 data/yolo_smoke/
+Ultralytics/

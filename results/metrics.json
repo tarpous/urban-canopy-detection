@@ -56,9 +56,10 @@
     }
   ],
   "sahi_effect": {
-    "status": "pending",
-    "model": "YOLO26-s",
-    "whole_image_map_50": null,
-    "sliced_map_50": null
+    "status": "measured",
+    "model": "YOLO11-s",
+    "slice": "256/64",
+    "whole_image_map_50": 0.455,
+    "sliced_map_50": 0.4497
   }
 }

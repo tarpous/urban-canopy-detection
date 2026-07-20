@@ -18,7 +18,7 @@ The engineering that makes the numbers trustworthy — byte-exact label converte
 | DeepForest RetinaNet (published baseline) | 0.583 | 0.223 | 0.745 | 0.615 | 0.505 | 0.682 | 0.667 | whole-image, CPU |
 | RF-DETR (fine-tuned) | 0.624 | 0.256 | 0.626 | 0.656 | 0.567 | 0.710 | 0.833 | tile (640) |
 
-**SAHI effect (YOLO26-s):** whole-image mAP@50 — → sliced —.
+**SAHI effect (YOLO11-s):** whole-image mAP@50 0.455 → sliced 0.450.
 <!-- results:end -->
 
 The table renders directly from `results/metrics.json`; every row is a real local run. All models are scored on the **same 39 held-out val tiles** from held-out sites, so the comparison is apples-to-apples.
@@ -77,7 +77,7 @@ flowchart LR
 Three design choices carry the project:
 
 - **Leakage-safe splits.** Overlapping aerial tiles from one NEON site are near-duplicates; a random split leaks them across train/val and inflates every metric. Splitting by *site* (the 4-letter code in each filename) blocks that, and a test raises on any site appearing in both halves.
-- **SAHI tiled inference.** Downscaling a full orthophoto to a detector's input erases small crowns. Slicing with overlap, detecting per tile, offsetting boxes back, and de-duplicating with NMS recovers small-object recall; the README quantifies the mAP gain versus whole-image inference.
+- **SAHI tiled inference.** On a full orthophoto, downscaling to a detector's input erases small crowns; slicing with overlap, detecting per tile, offsetting boxes back, and de-duplicating with NMS recovers small-object recall. The table measures the effect on the 400 px benchmark tiles (whole-image 0.455 → sliced 0.450) — essentially neutral, and honestly so: at 400 px there is no resolution for slicing to recover, so SAHI earns its keep only on large scenes. The mechanism is tested; the number is reported for the data at hand rather than cherry-picked.
 - **Honest metrics.** A compact, dependency-free COCO mAP (greedy IoU matching, 101-point AP, the 0.5:0.95 sweep) lives in this repo and is cross-checked against hand-computed fixtures, so the headline number is auditable rather than hidden in a framework. Per-size **recall** (not AP) is reported by crown size, because attributing a false positive to a truth-size band is ill-defined.
 
 ## Data

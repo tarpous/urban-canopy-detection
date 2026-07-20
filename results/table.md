@@ -7,4 +7,4 @@
 | DeepForest RetinaNet (published baseline) | 0.583 | 0.223 | 0.745 | 0.615 | 0.505 | 0.682 | 0.667 | whole-image, CPU |
 | RF-DETR (fine-tuned) | 0.624 | 0.256 | 0.626 | 0.656 | 0.567 | 0.710 | 0.833 | tile (640) |
 
-**SAHI effect (YOLO26-s):** whole-image mAP@50 — → sliced —.
+**SAHI effect (YOLO11-s):** whole-image mAP@50 0.455 → sliced 0.450.
